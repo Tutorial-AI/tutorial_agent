@@ -23,48 +23,15 @@ const twitterUsernameSchema = z
     }, "An X Username can only contain letters, numbers, and underscores");
 
 /**
- * This schema defines all required/optional environment settings,
- * including new fields like TWITTER_SPACES_ENABLE.
+ * Base schema for common Twitter configuration settings
  */
-export const twitterEnvSchema = z.object({
+const twitterBaseEnvSchema = z.object({
     TWITTER_DRY_RUN: z.boolean(),
-    TWITTER_USERNAME: z.string().min(1, "X/Twitter username is required"),
-    TWITTER_PASSWORD: z.string().min(1, "X/Twitter password is required"),
-    TWITTER_EMAIL: z.string().email("Valid X/Twitter email is required"),
     MAX_TWEET_LENGTH: z.number().int().default(DEFAULT_MAX_TWEET_LENGTH),
     TWITTER_SEARCH_ENABLE: z.boolean().default(false),
-    TWITTER_2FA_SECRET: z.string(),
     TWITTER_RETRY_LIMIT: z.number().int(),
     TWITTER_POLL_INTERVAL: z.number().int(),
     TWITTER_TARGET_USERS: z.array(twitterUsernameSchema).default([]),
-    // I guess it's possible to do the transformation with zod
-    // not sure it's preferable, maybe a readability issue
-    // since more people will know js/ts than zod
-    /*
-        z
-        .string()
-        .transform((val) => val.trim())
-        .pipe(
-            z.string()
-                .transform((val) =>
-                    val ? val.split(',').map((u) => u.trim()).filter(Boolean) : []
-                )
-                .pipe(
-                    z.array(
-                        z.string()
-                            .min(1)
-                            .max(15)
-                            .regex(
-                                /^[A-Za-z][A-Za-z0-9_]*[A-Za-z0-9]$|^[A-Za-z]$/,
-                                'Invalid Twitter username format'
-                            )
-                    )
-                )
-                .transform((users) => users.join(','))
-        )
-        .optional()
-        .default(''),
-    */
     POST_INTERVAL_MIN: z.number().int(),
     POST_INTERVAL_MAX: z.number().int(),
     ENABLE_ACTION_PROCESSING: z.boolean(),
@@ -76,6 +43,66 @@ export const twitterEnvSchema = z.object({
         .nativeEnum(ActionTimelineType)
         .default(ActionTimelineType.ForYou),
 });
+
+
+//Schema for username/password authentication
+
+const twitterUsernamePasswordSchema = z.object({
+    TWITTER_USERNAME: z.string().min(1, "X/Twitter username is required"),
+    TWITTER_PASSWORD: z.string().min(1, "X/Twitter password is required"),
+    TWITTER_EMAIL: z.string().email("Valid X/Twitter email is required"),
+    TWITTER_2FA_SECRET: z.string(),
+    TWITTER_API_KEY: z.string().optional(),
+    TWITTER_API_SECRET: z.string().optional(),
+    TWITTER_ACCESS_TOKEN: z.string().optional(),
+    TWITTER_ACCESS_TOKEN_SECRET: z.string().optional(),
+    TWITTER_BEARER_TOKEN: z.string().optional(),
+    TWITTER_AUTH_MODE: z.literal("password").default("password"),
+});
+
+
+// Schema for API key authentication
+ 
+const twitterApiKeySchema = z.object({
+    TWITTER_USERNAME: z.string().optional(),
+    TWITTER_PASSWORD: z.string().optional(),
+    TWITTER_EMAIL: z.string().optional(),
+    TWITTER_2FA_SECRET: z.string().optional(),
+    TWITTER_API_KEY: z.string().min(1, "X/Twitter API key is required"),
+    TWITTER_API_SECRET: z.string().min(1, "X/Twitter API secret is required"),
+    TWITTER_ACCESS_TOKEN: z.string().min(1, "X/Twitter access token is required"),
+    TWITTER_ACCESS_TOKEN_SECRET: z.string().min(1, "X/Twitter access token secret is required"),
+    TWITTER_BEARER_TOKEN: z.string().optional(),
+    TWITTER_AUTH_MODE: z.literal("api_key").default("api_key"),
+});
+
+/**
+ * Schema for bearer token authentication (limited functionality - read-only)
+ */
+const twitterBearerTokenSchema = z.object({
+    TWITTER_USERNAME: z.string().optional(),
+    TWITTER_PASSWORD: z.string().optional(),
+    TWITTER_EMAIL: z.string().optional(),
+    TWITTER_2FA_SECRET: z.string().optional(),
+    TWITTER_API_KEY: z.string().optional(),
+    TWITTER_API_SECRET: z.string().optional(),
+    TWITTER_ACCESS_TOKEN: z.string().optional(),
+    TWITTER_ACCESS_TOKEN_SECRET: z.string().optional(),
+    TWITTER_BEARER_TOKEN: z.string().min(1, "X/Twitter bearer token is required"),
+    TWITTER_AUTH_MODE: z.literal("bearer").default("bearer"),
+});
+
+/**
+ * Combined schema for all authentication methods
+ */
+export const twitterEnvSchema = z.intersection(
+    twitterBaseEnvSchema,
+    z.discriminatedUnion("TWITTER_AUTH_MODE", [
+        twitterUsernamePasswordSchema,
+        twitterApiKeySchema,
+        twitterBearerTokenSchema,
+    ])
+);
 
 export type TwitterConfig = z.infer<typeof twitterEnvSchema>;
 
@@ -102,25 +129,57 @@ function safeParseInt(
     return isNaN(parsed) ? defaultValue : Math.max(1, parsed);
 }
 
+
+ //Determines the authentication mode based on available credentials.
+ //This is needed for the discriminated union above.
+ 
+function determineAuthMode(runtime: IAgentRuntime): string {
+    const apiKey = runtime.getSetting("TWITTER_API_KEY") || process.env.TWITTER_API_KEY;
+    const apiSecret = runtime.getSetting("TWITTER_API_SECRET") || process.env.TWITTER_API_SECRET;
+    const accessToken = runtime.getSetting("TWITTER_ACCESS_TOKEN") || process.env.TWITTER_ACCESS_TOKEN;
+    const accessTokenSecret = runtime.getSetting("TWITTER_ACCESS_TOKEN_SECRET") || process.env.TWITTER_ACCESS_TOKEN_SECRET;
+    const bearerToken = runtime.getSetting("TWITTER_BEARER_TOKEN") || process.env.TWITTER_BEARER_TOKEN;
+    const username = runtime.getSetting("TWITTER_USERNAME") || process.env.TWITTER_USERNAME;
+    const password = runtime.getSetting("TWITTER_PASSWORD") || process.env.TWITTER_PASSWORD;
+
+    // Explicitly set mode takes precedence
+    const explicitMode = runtime.getSetting("TWITTER_AUTH_MODE") || process.env.TWITTER_AUTH_MODE;
+    if (explicitMode) {
+        return explicitMode;
+    }
+
+    // Otherwise infer from credentials
+    if (apiKey && apiSecret && accessToken && accessTokenSecret) {
+        return "api_key";
+    } else if (bearerToken) {
+        return "bearer";
+    } else if (username && password) {
+        return "password";
+    }
+
+    // Default to password auth (original behavior)
+    return "password";
+}
+
 /**
  * Validates or constructs a TwitterConfig object using zod,
  * taking values from the IAgentRuntime or process.env as needed.
  */
-// This also is organized to serve as a point of documentation for the client
-// most of the inputs from the framework (env/character)
-
-// we also do a lot of typing/parsing here
-// so we can do it once and only once per character
 export async function validateTwitterConfig(
     runtime: IAgentRuntime
 ): Promise<TwitterConfig> {
     try {
+        // Determine the auth mode first
+        const authMode = determineAuthMode(runtime);
+
         const twitterConfig = {
+            TWITTER_AUTH_MODE: authMode,
+
             TWITTER_DRY_RUN:
                 parseBooleanFromText(
                     runtime.getSetting("TWITTER_DRY_RUN") ||
                         process.env.TWITTER_DRY_RUN
-                ) ?? false, // parseBooleanFromText return null if "", map "" to false
+                ) ?? false,
 
             TWITTER_USERNAME:
                 runtime.getSetting("TWITTER_USERNAME") ||
@@ -134,7 +193,26 @@ export async function validateTwitterConfig(
                 runtime.getSetting("TWITTER_EMAIL") ||
                 process.env.TWITTER_EMAIL,
 
-            // number as string?
+            TWITTER_API_KEY:
+                runtime.getSetting("TWITTER_API_KEY") ||
+                process.env.TWITTER_API_KEY,
+
+            TWITTER_API_SECRET:
+                runtime.getSetting("TWITTER_API_SECRET") ||
+                process.env.TWITTER_API_SECRET,
+
+            TWITTER_ACCESS_TOKEN:
+                runtime.getSetting("TWITTER_ACCESS_TOKEN") ||
+                process.env.TWITTER_ACCESS_TOKEN,
+
+            TWITTER_ACCESS_TOKEN_SECRET:
+                runtime.getSetting("TWITTER_ACCESS_TOKEN_SECRET") ||
+                process.env.TWITTER_ACCESS_TOKEN_SECRET,
+
+            TWITTER_BEARER_TOKEN:
+                runtime.getSetting("TWITTER_BEARER_TOKEN") ||
+                process.env.TWITTER_BEARER_TOKEN,
+
             MAX_TWEET_LENGTH: safeParseInt(
                 runtime.getSetting("MAX_TWEET_LENGTH") ||
                     process.env.MAX_TWEET_LENGTH,
@@ -147,61 +225,52 @@ export async function validateTwitterConfig(
                         process.env.TWITTER_SEARCH_ENABLE
                 ) ?? false,
 
-            // string passthru
             TWITTER_2FA_SECRET:
                 runtime.getSetting("TWITTER_2FA_SECRET") ||
                 process.env.TWITTER_2FA_SECRET ||
                 "",
 
-            // int
             TWITTER_RETRY_LIMIT: safeParseInt(
                 runtime.getSetting("TWITTER_RETRY_LIMIT") ||
                     process.env.TWITTER_RETRY_LIMIT,
                 5
             ),
 
-            // int in seconds
             TWITTER_POLL_INTERVAL: safeParseInt(
                 runtime.getSetting("TWITTER_POLL_INTERVAL") ||
                     process.env.TWITTER_POLL_INTERVAL,
                 120 // 2m
             ),
 
-            // comma separated string
             TWITTER_TARGET_USERS: parseTargetUsers(
                 runtime.getSetting("TWITTER_TARGET_USERS") ||
                     process.env.TWITTER_TARGET_USERS
             ),
 
-            // int in minutes
             POST_INTERVAL_MIN: safeParseInt(
                 runtime.getSetting("POST_INTERVAL_MIN") ||
                     process.env.POST_INTERVAL_MIN,
                 90 // 1.5 hours
             ),
 
-            // int in minutes
             POST_INTERVAL_MAX: safeParseInt(
                 runtime.getSetting("POST_INTERVAL_MAX") ||
                     process.env.POST_INTERVAL_MAX,
                 180 // 3 hours
             ),
 
-            // bool
             ENABLE_ACTION_PROCESSING:
                 parseBooleanFromText(
                     runtime.getSetting("ENABLE_ACTION_PROCESSING") ||
                         process.env.ENABLE_ACTION_PROCESSING
                 ) ?? false,
 
-            // init in minutes (min 1m)
             ACTION_INTERVAL: safeParseInt(
                 runtime.getSetting("ACTION_INTERVAL") ||
                     process.env.ACTION_INTERVAL,
                 5 // 5 minutes
             ),
 
-            // bool
             POST_IMMEDIATELY:
                 parseBooleanFromText(
                     runtime.getSetting("POST_IMMEDIATELY") ||
@@ -225,6 +294,7 @@ export async function validateTwitterConfig(
                 process.env.ACTION_TIMELINE_TYPE,
         };
 
+        // Validate with zod schema
         return twitterEnvSchema.parse(twitterConfig);
     } catch (error) {
         if (error instanceof ZodError) {

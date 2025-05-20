@@ -5,6 +5,10 @@ import { TwitterInteractionClient } from "./interactions.ts";
 import { TwitterPostClient } from "./post.ts";
 import { TwitterSearchClient } from "./search.ts";
 import { TwitterSpaceClient } from "./spaces.ts";
+import { ApiTwitterClient } from "./api-client.ts";
+
+// Define a union type for the Twitter client
+export type TwitterClient = ClientBase | ApiTwitterClient;
 
 /**
  * A manager that orchestrates all specialized Twitter logic:
@@ -15,15 +19,21 @@ import { TwitterSpaceClient } from "./spaces.ts";
  * - space: launching and managing Twitter Spaces (optional)
  */
 class TwitterManager {
-    client: ClientBase;
+    client: TwitterClient;
     post: TwitterPostClient;
     search: TwitterSearchClient;
     interaction: TwitterInteractionClient;
     space?: TwitterSpaceClient;
 
     constructor(runtime: IAgentRuntime, twitterConfig: TwitterConfig) {
-        // Pass twitterConfig to the base client
-        this.client = new ClientBase(runtime, twitterConfig);
+        // Determine which client implementation to use based on auth mode
+        if (twitterConfig.TWITTER_AUTH_MODE === 'api_key' || twitterConfig.TWITTER_AUTH_MODE === 'bearer') {
+            elizaLogger.log("Using Twitter API client with API key authentication");
+            this.client = new ApiTwitterClient(runtime, twitterConfig);
+        } else {
+            elizaLogger.log("Using Twitter scraper client with username/password authentication");
+            this.client = new ClientBase(runtime, twitterConfig);
+        }
 
         // Posting logic
         this.post = new TwitterPostClient(this.client, runtime);
@@ -42,8 +52,9 @@ class TwitterManager {
         this.interaction = new TwitterInteractionClient(this.client, runtime);
 
         // Optional Spaces logic (enabled if TWITTER_SPACES_ENABLE is true)
-        if (twitterConfig.TWITTER_SPACES_ENABLE) {
-            this.space = new TwitterSpaceClient(this.client, runtime);
+        if (twitterConfig.TWITTER_SPACES_ENABLE && twitterConfig.TWITTER_AUTH_MODE !== 'api_key') {
+            // Spaces are only supported with the scraper client for now
+            this.space = new TwitterSpaceClient(this.client as ClientBase, runtime);
         }
     }
 }
@@ -54,6 +65,7 @@ export const TwitterClientInterface: Client = {
             await validateTwitterConfig(runtime);
 
         elizaLogger.log("Twitter client started");
+        elizaLogger.log(`Using authentication mode: ${twitterConfig.TWITTER_AUTH_MODE}`);
 
         const manager = new TwitterManager(runtime, twitterConfig);
 

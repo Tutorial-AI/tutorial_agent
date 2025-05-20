@@ -2,7 +2,7 @@ import type { Tweet } from "agent-twitter-client";
 import { getEmbeddingZeroVector } from "@elizaos/core";
 import type { Content, Memory, UUID } from "@elizaos/core";
 import { stringToUuid } from "@elizaos/core";
-import type { ClientBase } from "./base";
+import type { TwitterClient } from "./index";
 import { elizaLogger } from "@elizaos/core";
 import type { Media } from "@elizaos/core";
 import fs from "fs";
@@ -32,7 +32,7 @@ export const isValidTweet = (tweet: Tweet): boolean => {
 
 export async function buildConversationThread(
     tweet: Tweet,
-    client: ClientBase,
+    client: TwitterClient,
     maxReplies = 10
 ): Promise<Tweet[]> {
     const thread: Tweet[] = [];
@@ -196,7 +196,7 @@ export async function fetchMediaData(
 }
 
 export async function sendTweet(
-    client: ClientBase,
+    client: TwitterClient,
     content: Content,
     roomId: UUID,
     twitterUsername: string,

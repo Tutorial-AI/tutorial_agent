@@ -17,7 +17,7 @@ import {
     type IImageDescriptionService,
     ServiceType
 } from "@elizaos/core";
-import type { ClientBase } from "./base";
+import type { TwitterClient } from "./index";
 import { buildConversationThread, sendTweet, wait } from "./utils.ts";
 
 export const twitterMessageHandlerTemplate =
@@ -94,10 +94,10 @@ Thread of Tweets You Are Replying To:
 ` + shouldRespondFooter;
 
 export class TwitterInteractionClient {
-    client: ClientBase;
+    client: TwitterClient;
     runtime: IAgentRuntime;
     private isDryRun: boolean;
-    constructor(client: ClientBase, runtime: IAgentRuntime) {
+    constructor(client: TwitterClient, runtime: IAgentRuntime) {
         this.client = client;
         this.runtime = runtime;
         this.isDryRun = this.client.twitterConfig.TWITTER_DRY_RUN;

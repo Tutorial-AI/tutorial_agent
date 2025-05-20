@@ -12,7 +12,7 @@ import {
     type State,
 } from "@elizaos/core";
 import { stringToUuid } from "@elizaos/core";
-import type { ClientBase } from "./base";
+import type { TwitterClient } from "./index";
 import { buildConversationThread, sendTweet, wait } from "./utils.ts";
 
 const twitterSearchTemplate =
@@ -43,12 +43,12 @@ Your response should not contain any questions. Brief, concise statements only. 
 ` + messageCompletionFooter;
 
 export class TwitterSearchClient {
-    client: ClientBase;
+    client: TwitterClient;
     runtime: IAgentRuntime;
     twitterUsername: string;
     private respondedTweets: Set<string> = new Set();
 
-    constructor(client: ClientBase, runtime: IAgentRuntime) {
+    constructor(client: TwitterClient, runtime: IAgentRuntime) {
         this.client = client;
         this.runtime = runtime;
         this.twitterUsername = this.client.twitterConfig.TWITTER_USERNAME;

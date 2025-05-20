@@ -14,7 +14,7 @@ import {
     cleanJsonResponse,
 } from "@elizaos/core";
 import { elizaLogger } from "@elizaos/core";
-import type { ClientBase } from "./base.ts";
+import type { TwitterClient } from "./index.ts";
 import { postActionResponseFooter } from "@elizaos/core";
 import { generateTweetActions } from "@elizaos/core";
 import { type IImageDescriptionService, ServiceType } from "@elizaos/core";
@@ -94,7 +94,7 @@ interface PendingTweet {
 type PendingTweetApprovalStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 export class TwitterPostClient {
-    client: ClientBase;
+    client: TwitterClient;
     runtime: IAgentRuntime;
     twitterUsername: string;
     private isProcessing = false;
@@ -106,7 +106,7 @@ export class TwitterPostClient {
     private discordApprovalChannelId: string;
     private approvalCheckInterval: number;
 
-    constructor(client: ClientBase, runtime: IAgentRuntime) {
+    constructor(client: TwitterClient, runtime: IAgentRuntime) {
         this.client = client;
         this.runtime = runtime;
         this.twitterUsername = this.client.twitterConfig.TWITTER_USERNAME;
@@ -383,10 +383,29 @@ export class TwitterPostClient {
         mediaData?: MediaData[]
     ) {
         try {
+            // Try to load the moderation plugin - dynamic import to avoid breaking changes
+            let moderatedContent = content;
+            try {
+                // Apply content moderation if available
+                const { beforeSend } = await import("./plugins/OpenAIModerationPlugin");
+                if (typeof beforeSend === "function") {
+                    moderatedContent = await beforeSend(this.runtime, content, { inReplyToTweetId: tweetId });
+
+                    // If moderation returns null, block the tweet
+                    if (moderatedContent === null) {
+                        elizaLogger.warn("Note Tweet blocked by moderation plugin");
+                        return null;
+                    }
+                }
+            } catch (pluginError) {
+                // If plugin import fails, log and continue with original content
+                elizaLogger.error("Error loading moderation plugin:", pluginError);
+            }
+
             const noteTweetResult = await client.requestQueue.add(
                 async () =>
                     await client.twitterClient.sendNoteTweet(
-                        content,
+                        moderatedContent,
                         tweetId,
                         mediaData
                     )
@@ -395,7 +414,7 @@ export class TwitterPostClient {
             if (noteTweetResult.errors && noteTweetResult.errors.length > 0) {
                 // Note Tweet failed due to authorization. Falling back to standard Tweet.
                 const truncateContent = truncateToCompleteSentence(
-                    content,
+                    moderatedContent,
                     this.client.twitterConfig.MAX_TWEET_LENGTH
                 );
                 return await this.sendStandardTweet(
@@ -419,10 +438,29 @@ export class TwitterPostClient {
         mediaData?: MediaData[]
     ) {
         try {
+            // Try to load the moderation plugin - dynamic import to avoid breaking changes
+            let moderatedContent = content;
+            try {
+                // Apply content moderation if available
+                const { beforeSend } = await import("./plugins/OpenAIModerationPlugin");
+                if (typeof beforeSend === "function") {
+                    moderatedContent = await beforeSend(this.runtime, content, { inReplyToTweetId: tweetId });
+
+                    // If moderation returns null, block the tweet
+                    if (moderatedContent === null) {
+                        elizaLogger.warn("Tweet blocked by moderation plugin");
+                        return null;
+                    }
+                }
+            } catch (pluginError) {
+                // If plugin import fails, log and continue with original content
+                elizaLogger.error("Error loading moderation plugin:", pluginError);
+            }
+
             const standardTweetResult = await client.requestQueue.add(
                 async () =>
                     await client.twitterClient.sendTweet(
-                        content,
+                        moderatedContent,
                         tweetId,
                         mediaData
                     )
@@ -467,6 +505,12 @@ export class TwitterPostClient {
                     undefined,
                     mediaData
                 );
+            }
+
+            // Check if tweet was blocked by moderation
+            if (!result) {
+                elizaLogger.warn("Tweet was blocked by moderation - not posting");
+                return;
             }
 
             const tweet = this.createTweetObject(
@@ -1227,6 +1271,13 @@ export class TwitterPostClient {
                     replyText,
                     tweet.id
                 );
+            }
+
+            // Check if reply was blocked by moderation
+            if (!result) {
+                elizaLogger.warn(`Reply to tweet ${tweet.id} was blocked by moderation`);
+                executedActions.push("reply (blocked by moderation)");
+                return;
             }
 
             if (result) {

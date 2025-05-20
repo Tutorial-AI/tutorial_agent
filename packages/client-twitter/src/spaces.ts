@@ -8,7 +8,7 @@ import {
     type ITranscriptionService,
     type TwitterSpaceDecisionOptions,
 } from "@elizaos/core";
-import type { ClientBase } from "./base";
+import { ClientBase } from "./base";
 import {
     type Scraper,
     Space,
