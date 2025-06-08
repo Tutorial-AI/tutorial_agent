@@ -1,4 +1,4 @@
-[@elizaos/core v0.1.7](../index.md) / Clients
+[@elizaos/core v0.1.9](../index.md) / Clients
 
 # Enumeration: Clients
 
@@ -6,15 +6,25 @@ Available client platforms
 
 ## Enumeration Members
 
+### ALEXA
+
+> **ALEXA**: `"alexa"`
+
+#### Defined in
+
+[packages/core/src/types.ts:651](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L651)
+
+***
+
 ### DISCORD
 
 > **DISCORD**: `"discord"`
 
 #### Defined in
 
-[packages/core/src/types.ts:620](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L620)
+[packages/core/src/types.ts:652](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L652)
 
----
+***
 
 ### DIRECT
 
@@ -22,9 +32,9 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:621](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L621)
+[packages/core/src/types.ts:653](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L653)
 
----
+***
 
 ### TWITTER
 
@@ -32,9 +42,9 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:622](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L622)
+[packages/core/src/types.ts:654](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L654)
 
----
+***
 
 ### TELEGRAM
 
@@ -42,9 +52,19 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:623](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L623)
+[packages/core/src/types.ts:655](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L655)
 
----
+***
+
+### TELEGRAM\_ACCOUNT
+
+> **TELEGRAM\_ACCOUNT**: `"telegram-account"`
+
+#### Defined in
+
+[packages/core/src/types.ts:656](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L656)
+
+***
 
 ### FARCASTER
 
@@ -52,9 +72,9 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:624](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L624)
+[packages/core/src/types.ts:657](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L657)
 
----
+***
 
 ### LENS
 
@@ -62,9 +82,9 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:625](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L625)
+[packages/core/src/types.ts:658](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L658)
 
----
+***
 
 ### AUTO
 
@@ -72,9 +92,9 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:626](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L626)
+[packages/core/src/types.ts:659](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L659)
 
----
+***
 
 ### SLACK
 
@@ -82,9 +102,49 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:627](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L627)
+[packages/core/src/types.ts:660](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L660)
 
----
+***
+
+### GITHUB
+
+> **GITHUB**: `"github"`
+
+#### Defined in
+
+[packages/core/src/types.ts:661](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L661)
+
+***
+
+### INSTAGRAM
+
+> **INSTAGRAM**: `"instagram"`
+
+#### Defined in
+
+[packages/core/src/types.ts:662](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L662)
+
+***
+
+### SIMSAI
+
+> **SIMSAI**: `"simsai"`
+
+#### Defined in
+
+[packages/core/src/types.ts:663](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L663)
+
+***
+
+### XMTP
+
+> **XMTP**: `"xmtp"`
+
+#### Defined in
+
+[packages/core/src/types.ts:664](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L664)
+
+***
 
 ### DEVA
 
@@ -92,5 +152,4 @@ Available client platforms
 
 #### Defined in
 
-[packages/core/src/types.ts:643](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L643)
-
+[packages/core/src/types.ts:665](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L665)

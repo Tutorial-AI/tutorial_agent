@@ -1,4 +1,4 @@
-[@elizaos/core v0.1.7](../index.md) / TokenizerType
+[@elizaos/core v0.1.9](../index.md) / TokenizerType
 
 # Enumeration: TokenizerType
 
@@ -10,9 +10,9 @@
 
 #### Defined in
 
-[packages/core/src/types.ts:1322](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L1322)
+[packages/core/src/types.ts:1637](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L1637)
 
----
+***
 
 ### TikToken
 
@@ -20,4 +20,4 @@
 
 #### Defined in
 
-[packages/core/src/types.ts:1323](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L1323)
+[packages/core/src/types.ts:1638](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L1638)

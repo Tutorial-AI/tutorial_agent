@@ -3,7 +3,8 @@
   "plugins": [
     "@elizaos/plugin-twitter",
     "@elizaos/plugin-goat",
-    "@elizaos/plugin-bnb"
+    "@elizaos/plugin-bnb",
+    "@elizaos/plugin-bnb-mcp"
   ],
   "clients": [
     "twitter",

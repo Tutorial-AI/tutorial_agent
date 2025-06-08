@@ -1,4 +1,4 @@
-[@elizaos/core v0.1.7](../index.md) / Plugin
+[@elizaos/core v0.1.9](../index.md) / Plugin
 
 # Type Alias: Plugin
 
@@ -52,4 +52,4 @@ Optional clients
 
 ## Defined in
 
-[packages/core/src/types.ts:593](https://github.com/elizaOS/eliza/blob/main/packages/core/src/types.ts#L593)
+[packages/core/src/types.ts:624](https://github.com/abilmansuryeshmuratov/tutorial_agent/blob/main/packages/core/src/types.ts#L624)
